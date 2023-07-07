@@ -80,6 +80,8 @@ addLevel([
 
 const hero = add([
   pos(16, 16),
+  scale(1),
+  anchor("center"),
   sprite("hero"),
   area(),
   body(),
@@ -87,11 +89,22 @@ const hero = add([
 hero.play("idle")
 hero.onUpdate(() => {
   // run
-  hero.pos.x += dt() * 32
+  if (isKeyDown("d")) {
+    hero.scale.x = 1
+    hero.pos.x += dt() * 32
+  }
+  if (isKeyDown("a")) {
+    hero.scale.x = -1
+    hero.pos.x -= dt() * 32
+  }
 
   // camera follow hero in x
   const currentCamPos = camPos()
   camPos(hero.pos.x, currentCamPos.y)
+})
+hero.onCollide("enemy", obj => {
+  shake(4)
+  obj.destroy()
 })
 
 const enemy = add([
