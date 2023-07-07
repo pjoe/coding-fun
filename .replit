@@ -1,0 +1,22 @@
+run = "npm run dev"
+entrypoint = "src/game.ts"
+
+hidden = [
+	".config",
+]
+
+[nix]
+channel = "stable-23_05"
+
+[packager]
+language="nodejs"
+
+[packager.features]
+packageSearch = true
+
+[languages.javascript]
+pattern = "**/*.{js,ts}"
+syntax = "javascript"
+
+[languages.javascript.languageServer]
+start = [ "typescript-language-server", "--stdio" ]

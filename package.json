@@ -1,0 +1,16 @@
+{
+	"name": "kaboomtest",
+	"scripts": {
+		"build": "esbuild --bundle src/game.ts --outfile=www/main.js",
+		"dev": "esbuild --bundle src/game.ts --outfile=www/main.js --servedir=www",
+		"watch": "esbuild --bundle src/game.ts --outfile=www/main.js --watch",
+		"check": "tsc --noEmit src/game.ts"
+	},
+	"dependencies": {
+		"kaboom": "^3000.0.14"
+	},
+	"devDependencies": {
+		"esbuild": "^0.15.9",
+		"typescript": "^5.0.0"
+	}
+}
