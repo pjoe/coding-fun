@@ -1,7 +1,7 @@
 import kaboom from "kaboom"
 import "kaboom/global"
 
-kaboom({ scale: 2, background: [0, 0, 0] })
+kaboom({ scale: 2, background: [0, 0, 0], maxFPS: 30 })
 setGravity(980)
 
 loadSpriteAtlas("assets/industrial.v2.png", {
@@ -14,18 +14,28 @@ loadSpriteAtlas("assets/industrial.v2.png", {
     sliceY: 3,
     anims: {
       idle: { from: 0, to: 1, loop: true, speed: 4 },
-      run: { from: 0, to: 3, loop: true },
+      run: { from: 0, to: 2, loop: true },
       hit: { from: 16, to: 19 },
     },
   },
   "enemy1": {
     x: 0,
-    y: 320,
-    width: 80,
+    y: 400,
+    width: 64,
     height: 16,
-    sliceX: 5,
+    sliceX: 4,
     anims: {
-      idle: { from: 0, to: 4, loop: true, speed: 4 },
+      idle: { from: 0, to: 3, loop: true, speed: 4 },
+    },
+  },
+  "enemy2": {
+    x: 0,
+    y: 432,
+    width: 64,
+    height: 16,
+    sliceX: 4,
+    anims: {
+      idle: { from: 0, to: 3, loop: true, speed: 4 },
     },
   },
   "ground1": {
