@@ -54,6 +54,27 @@
          "animation":[
                 {
                  "duration":200,
+                 "tileid":579
+                }, 
+                {
+                 "duration":200,
+                 "tileid":578
+                }, 
+                {
+                 "duration":200,
+                 "tileid":577
+                }, 
+                {
+                 "duration":200,
+                 "tileid":576
+                }],
+         "id":576,
+         "type":"hero-die"
+        }, 
+        {
+         "animation":[
+                {
+                 "duration":200,
                  "tileid":800
                 }, 
                 {
@@ -72,7 +93,6 @@
          "objectgroup":
             {
              "draworder":"index",
-             "id":2,
              "name":"",
              "objects":[
                     {
@@ -91,7 +111,29 @@
              "visible":true,
              "x":0,
              "y":0
-            }
+            },
+         "type":"enemy1"
+        }, 
+        {
+         "animation":[
+                {
+                 "duration":200,
+                 "tileid":864
+                }, 
+                {
+                 "duration":200,
+                 "tileid":865
+                }, 
+                {
+                 "duration":200,
+                 "tileid":866
+                }, 
+                {
+                 "duration":200,
+                 "tileid":867
+                }],
+         "id":864,
+         "type":"enemy2"
         }],
  "tilewidth":16,
  "type":"tileset",
