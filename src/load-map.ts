@@ -1,3 +1,6 @@
+import kaboom from "kaboom"
+import "kaboom/global"
+
 interface TileSet {
   firstgid: number
   source: string
@@ -11,6 +14,7 @@ interface TileLayer {
   starty: number
   x: number
   y: number
+  data: number[]
 }
 
 interface TileMap {
@@ -31,5 +35,17 @@ export async function loadMap(
   fname: string,
 ) {
   const map: TileMap = await loadFn(fname)
-  console.dir(map)
+  const tileLayers: TileLayer[] = map.layers.filter(l => l.type === "tilelayer")
+  const sprites: Record<number, any> = {}
+  tileLayers.forEach((l) => {
+    const ldata = []
+    for(let y = 0; y < l.height; ++y) {
+      for(let x = 0; x < l.width; ++x) {
+        const tId = l.data[(x % l.width) + y * l.width]
+        const spriteId = tId & 0xffff
+        ldata.push(spriteId)
+      }
+    }
+    console.dir(ldata)
+  })
 }
