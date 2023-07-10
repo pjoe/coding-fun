@@ -1,4 +1,4 @@
-import kaboom, { LevelOpt, SpriteAtlasData } from "kaboom"
+import kaboom, { CompList, LevelOpt, SpriteAtlasData } from "kaboom"
 import "kaboom/global"
 
 interface TileSet {
@@ -98,11 +98,18 @@ export async function loadMap(loadPromise: Thenable<any>) {
 
   // tile levels
   const tiles = Array.from(spriteRefs).reduce<LevelOpt["tiles"]>((acc, s) => {
-    acc[String.fromCharCode(s)] = () => [
-      sprite(String.fromCharCode(s & 0xfff)),
-      area(),
-      body({ isStatic: true }),
-    ]
+    acc[String.fromCharCode(s)] = () => {
+      const comps: CompList<any> = [
+        sprite(String.fromCharCode(s & 0xfff)),
+        anchor("center"),
+        area(),
+        body({ isStatic: true }),
+      ]
+      if (s & 0xc000) {
+        comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
+      }
+      return comps
+    }
     return acc
   }, {})
   tileLayers.forEach((l, idx) => {

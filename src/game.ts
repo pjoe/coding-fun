@@ -2,7 +2,7 @@ import kaboom from "kaboom"
 import "kaboom/global"
 import { loadMap } from "./load-map"
 
-kaboom({ scale: 2, background: [0, 0, 0], maxFPS: 30 })
+kaboom({ scale: 2, background: [0, 0, 0], maxFPS: 60 })
 setGravity(980)
 
 loadMap(loadJSON("tilemap", "assets/industrial.tmj"))
@@ -30,7 +30,10 @@ hero.onUpdate(() => {
 
   // camera follow hero in x
   const currentCamPos = camPos()
-  camPos(hero.pos.x, currentCamPos.y)
+  let camY = currentCamPos.y
+  if(hero.pos.y > camY + 16) camY += dt() * 64
+  if(hero.pos.y < camY - 16) camY -= dt() * 64
+  camPos(hero.pos.x, camY)
 })
 
 /*
