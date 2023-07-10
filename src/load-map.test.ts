@@ -7,5 +7,5 @@ async function loadJSON(fname: string) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  loadMap(loadJSON, "www/assets/industrial.tmj")
+  loadMap(loadJSON("www/assets/industrial.tmj"))
 }
