@@ -1,12 +1,12 @@
 import kaboom, { CompList, LevelOpt, SpriteAtlasData } from "kaboom"
 import "kaboom/global"
 
-interface TileSet {
+export interface TileSet {
   firstgid: number
   source: string
 }
 
-interface TileLayer {
+export interface TileLayer {
   type: "tilelayer"
   width: number
   height: number
@@ -17,7 +17,22 @@ interface TileLayer {
   data: number[]
 }
 
-interface TileMap {
+export interface TileObject {
+  name: string
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface ObjectLayer {
+  type: "objectgroup"
+  x: number
+  y: number
+  objects: TileObject[]
+}
+
+export interface TileMap {
   compressionlevel: number
   width: number
   height: number
@@ -27,7 +42,7 @@ interface TileMap {
   orientation: "orthogonal"
   renderorder: "right-down"
   tilesets: TileSet[]
-  layers: TileLayer[]
+  layers: (TileLayer|ObjectLayer)[]
 }
 
 interface Thenable<T> {
@@ -38,7 +53,7 @@ export async function loadMap(loadPromise: Thenable<any>) {
   const map: TileMap = await new Promise((r) => loadPromise.then(r))
   const tileLayers: TileLayer[] = map.layers.filter(
     (l) => l.type === "tilelayer",
-  )
+  ) as TileLayer[]
   const sprites = new Set<number>()
   // sprite refs include flags (flip/rotate)
   const spriteRefs = new Set<number>()
@@ -119,4 +134,5 @@ export async function loadMap(loadPromise: Thenable<any>) {
       tiles,
     })
   })
+  return map
 }
