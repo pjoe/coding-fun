@@ -1,3 +1,7 @@
 node_modules
+
 *.tiled-session
+
 /www/main.js
+
+.DS_Store
