@@ -1,6 +1,6 @@
 import kaboom from "kaboom"
 import "kaboom/global"
-import { loadMap } from "./load-map"
+import { ObjectLayer, loadMap } from "./load-map"
 
 kaboom({ scale: 2, background: [0, 0, 0], maxFPS: 60 })
 setGravity(980)
@@ -8,10 +8,13 @@ setGravity(980)
 const map = await loadMap("assets/industrial.tmj")
 
 // find spawn
-map.layers.find((l) => l.type === "objectgroup")
+const objLayer = map.layers.find((l) => l.type === "objectgroup") as ObjectLayer
+const spawnObj = objLayer.objects.find(o => o.name.startsWith("spawn"))
+if(!spawnObj) throw new Error("Spawn not found")
+const spawnPos = vec2(objLayer.x + spawnObj.x, objLayer.y + spawnObj.y)
 
 const hero = add([
-  pos(16, 16),
+  pos(spawnPos),
   scale(1),
   anchor("center"),
   sprite("hero"),
