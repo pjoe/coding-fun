@@ -42,20 +42,10 @@ hero.onUpdate(() => {
 // initial camera
 camPos(hero.pos)
 
-/*
-hero.onCollide("enemy", obj => {
+hero.onCollide("enemy", (obj) => {
   shake(4)
   obj.destroy()
 })
-
-const enemy = add([
-  pos(160, 16),
-  sprite("enemy1"),
-  area(),
-  body(),
-  "enemy"])
-enemy.play("idle")
-*/
 
 onKeyPress("space", () => {
   if (hero.isGrounded()) {

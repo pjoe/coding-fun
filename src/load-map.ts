@@ -175,6 +175,7 @@ export async function loadMap(fname: string) {
       const extra: any = []
       if (namedTiles[spriteNum - 1]) {
         spriteName = namedTiles[spriteNum - 1]
+        extra.push(...spriteName.split(","))
         extra.push({ anim: "default" })
       }
       const comps: CompList<any> = [
