@@ -1,9 +1,18 @@
-import kaboom, { CompList, LevelOpt, SpriteAtlasData } from "kaboom"
+import kaboom, {
+  CompList,
+  LevelOpt,
+  SpriteAtlasData,
+  SpriteAtlasEntry,
+} from "kaboom"
 import "kaboom/global"
 
 export interface Tile {
   id: number
   type: string
+  animation?: {
+    duration: number
+    tileid: number
+  }[]
 }
 
 export interface TileSet {
@@ -70,9 +79,9 @@ export async function loadMap(fname: string) {
   const map: TileMap = await loadData(fname)
 
   // tilesets
-  const tilesets = await Promise.all(
+  const tilesets = (await Promise.all(
     map.tilesets.map((ts) => loadData(`${basedir}/${ts.source}`)),
-  )
+  )) as TileSet[]
 
   const tileLayers: TileLayer[] = map.layers.filter(
     (l) => l.type === "tilelayer",
@@ -101,22 +110,59 @@ export async function loadMap(fname: string) {
 
   // use first tileset
   const ts = tilesets[0]
+  const namedTiles: Record<number, string> = {}
   const imagetilewidth = ts.imagewidth / ts.tilewidth
-  const initialSpriteAtlasData = {
-    hero: {
-      x: 0,
-      y: 256,
-      width: 128,
-      height: 48,
-      sliceX: 8,
-      sliceY: 3,
+  const initialSpriteAtlasData = ts.tiles.reduce<SpriteAtlasData>((acc, t) => {
+    const x = (t.id % ts.columns) * ts.tilewidth
+    const y = Math.floor(t.id / ts.columns) * ts.tileheight
+    const name = t.type ?? `tile-${t.id}`
+    namedTiles[t.id] = name
+    const spriteEntry: SpriteAtlasEntry = {
+      x,
+      y,
+      width: ts.tilewidth,
+      height: ts.tileheight,
       anims: {
-        default: { from: 0, to: 1, loop: true, speed: 4 },
-        run: { from: 0, to: 2, loop: true },
-        hit: { from: 16, to: 19 },
+        default: { from: 0, to: 0 },
       },
-    },
-  }
+    }
+    if (t.animation && t.animation.length > 0) {
+      const frames = t.animation.map((a) =>
+        quad(
+          (a.tileid % ts.columns) * ts.tilewidth - x,
+          Math.floor(a.tileid / ts.columns) * ts.tileheight - y,
+          ts.tilewidth,
+          ts.tileheight,
+        ),
+      )
+      spriteEntry.frames = frames
+      spriteEntry.anims = {
+        default: {
+          from: 0,
+          to: frames.length - 1,
+          loop: true,
+          speed: 1000 / t.animation[0].duration,
+        },
+      }
+    }
+    console.debug("tile:", name, spriteEntry)
+
+    acc[name] = spriteEntry
+    return acc
+  }, {})
+
+  // const initialSpriteAtlasData: SpriteAtlasData = {
+  //   hero: {
+  //     x: 0,
+  //     y: 256,
+  //     width: 16,
+  //     height: 16,
+  //     frames: [quad(0, 0, 16, 16), quad(16, 0, 16, 16)],
+  //     anims: {
+  //       default: { from: 0, to: 1, loop: true, speed: 4 },
+  //     },
+  //   },
+  // }
 
   const spriteInfo = Array.from(sprites).reduce<SpriteAtlasData>(
     (acc, s) => ({
