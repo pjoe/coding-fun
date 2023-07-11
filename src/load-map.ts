@@ -145,24 +145,11 @@ export async function loadMap(fname: string) {
         },
       }
     }
-    console.debug("tile:", name, spriteEntry)
+    console.debug("tile:", t.id, name, spriteEntry)
 
     acc[name] = spriteEntry
     return acc
   }, {})
-
-  // const initialSpriteAtlasData: SpriteAtlasData = {
-  //   hero: {
-  //     x: 0,
-  //     y: 256,
-  //     width: 16,
-  //     height: 16,
-  //     frames: [quad(0, 0, 16, 16), quad(16, 0, 16, 16)],
-  //     anims: {
-  //       default: { from: 0, to: 1, loop: true, speed: 4 },
-  //     },
-  //   },
-  // }
 
   const spriteInfo = Array.from(sprites).reduce<SpriteAtlasData>(
     (acc, s) => ({
@@ -178,14 +165,24 @@ export async function loadMap(fname: string) {
   )
   loadSpriteAtlas(`${basedir}/${ts.image}`, spriteInfo)
 
+  console.debug("namedTiles", namedTiles)
+
   // tile levels
   const tiles = Array.from(spriteRefs).reduce<LevelOpt["tiles"]>((acc, s) => {
     acc[String.fromCharCode(s)] = () => {
+      const spriteNum = s & 0xfff
+      let spriteName = String.fromCharCode(spriteNum)
+      const extra: any = []
+      if (namedTiles[spriteNum - 1]) {
+        spriteName = namedTiles[spriteNum - 1]
+        extra.push({ anim: "default" })
+      }
       const comps: CompList<any> = [
-        sprite(String.fromCharCode(s & 0xfff)),
+        sprite(spriteName),
         anchor("center"),
         area(),
         body({ isStatic: true }),
+        ...extra,
       ]
       if (s & 0xc000) {
         comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
@@ -195,10 +192,13 @@ export async function loadMap(fname: string) {
     return acc
   }, {})
   tileLayers.forEach((l, idx) => {
-    addLevel(layerData[idx], {
+    const level = addLevel(layerData[idx], {
       tileWidth: map.tilewidth,
       tileHeight: map.tileheight,
       tiles,
+    })
+    level.children.forEach((c) => {
+      if (c.anim) c.play(c.anim)
     })
   })
   return map
