@@ -112,7 +112,7 @@
              "x":0,
              "y":0
             },
-         "type":"enemy1"
+         "type":"enemy,1"
         }, 
         {
          "animation":[
@@ -133,7 +133,7 @@
                  "tileid":867
                 }],
          "id":864,
-         "type":"enemy2"
+         "type":"enemy,2"
         }],
  "tilewidth":16,
  "type":"tileset",
