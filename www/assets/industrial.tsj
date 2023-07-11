@@ -1,4 +1,4 @@
-{ "backgroundcolor":"#000000",
+{ "backgroundcolor":"#1a1a1a",
  "columns":32,
  "image":"industrial.v2.png",
  "imageheight":512,
@@ -8,9 +8,22 @@
  "objectalignment":"topleft",
  "spacing":0,
  "tilecount":1024,
- "tiledversion":"git",
+ "tiledversion":"1.10.1",
  "tileheight":16,
  "tiles":[
+        {
+         "animation":[
+                {
+                 "duration":200,
+                 "tileid":328
+                }, 
+                {
+                 "duration":200,
+                 "tileid":329
+                }],
+         "id":328,
+         "type":"powerup,1"
+        }, 
         {
          "animation":[
                 {
