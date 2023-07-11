@@ -2,9 +2,9 @@
 	"name": "kaboomtest",
 	"type": "module",
 	"scripts": {
-		"build": "esbuild --bundle src/game.ts --outfile=www/main.js",
-		"dev": "esbuild --bundle src/game.ts --outfile=www/main.js --servedir=www",
-		"watch": "esbuild --bundle src/game.ts --outfile=www/main.js --watch",
+		"build": "esbuild --bundle src/game.ts --outfile=www/main.js --format=esm",
+		"dev": "esbuild --bundle src/game.ts --outfile=www/main.js --format=esm --servedir=www",
+		"watch": "esbuild --bundle src/game.ts --outfile=www/main.js --format=esm --watch",
 		"check": "tsc --noEmit src/game.ts"
 	},
 	"dependencies": {

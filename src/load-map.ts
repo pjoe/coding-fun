@@ -1,7 +1,23 @@
 import kaboom, { CompList, LevelOpt, SpriteAtlasData } from "kaboom"
 import "kaboom/global"
 
+export interface Tile {
+  id: number
+  type: string
+}
+
 export interface TileSet {
+  name: string
+  columns: number
+  image: string
+  imagewidth: number
+  imageheight: number
+  tilewidth: number
+  tileheight: number
+  tiles: Tile[]
+}
+
+export interface TileSetRef {
   firstgid: number
   source: string
 }
@@ -36,21 +52,28 @@ export interface TileMap {
   compressionlevel: number
   width: number
   height: number
-  tileWidth: number
-  tileHeight: number
+  tilewidth: number
+  tileheight: number
   infinite: boolean
   orientation: "orthogonal"
   renderorder: "right-down"
-  tilesets: TileSet[]
-  layers: (TileLayer|ObjectLayer)[]
+  tilesets: TileSetRef[]
+  layers: (TileLayer | ObjectLayer)[]
 }
 
-interface Thenable<T> {
-  then: (t: T) => any
+function loadData(fname: string): Promise<any> {
+  return new Promise((r) => loadJSON(fname, fname).then(r))
 }
 
-export async function loadMap(loadPromise: Thenable<any>) {
-  const map: TileMap = await new Promise((r) => loadPromise.then(r))
+export async function loadMap(fname: string) {
+  const basedir = fname.replace(/\/[^\/]*$/, "")
+  const map: TileMap = await loadData(fname)
+
+  // tilesets
+  const tilesets = await Promise.all(
+    map.tilesets.map((ts) => loadData(`${basedir}/${ts.source}`)),
+  )
+
   const tileLayers: TileLayer[] = map.layers.filter(
     (l) => l.type === "tilelayer",
   ) as TileLayer[]
@@ -76,11 +99,9 @@ export async function loadMap(loadPromise: Thenable<any>) {
     layerData.push(ldata)
   })
 
-  //tileset
-  const imagewidth = 512
-  const tilewidth = 16
-  const tileheight = 16
-  const imagetilewidth = imagewidth / tilewidth
+  // use first tileset
+  const ts = tilesets[0]
+  const imagetilewidth = ts.imagewidth / ts.tilewidth
   const initialSpriteAtlasData = {
     hero: {
       x: 0,
@@ -101,15 +122,15 @@ export async function loadMap(loadPromise: Thenable<any>) {
     (acc, s) => ({
       ...acc,
       [String.fromCharCode(s)]: {
-        x: ((s - 1) % imagetilewidth) * tilewidth,
-        y: Math.floor((s - 1) / imagetilewidth) * tileheight,
-        width: tilewidth,
-        height: tileheight,
+        x: ((s - 1) % imagetilewidth) * ts.tilewidth,
+        y: Math.floor((s - 1) / imagetilewidth) * ts.tileheight,
+        width: ts.tilewidth,
+        height: ts.tileheight,
       },
     }),
     initialSpriteAtlasData,
   )
-  loadSpriteAtlas("assets/industrial.v2.png", spriteInfo)
+  loadSpriteAtlas(`${basedir}/${ts.image}`, spriteInfo)
 
   // tile levels
   const tiles = Array.from(spriteRefs).reduce<LevelOpt["tiles"]>((acc, s) => {
@@ -129,8 +150,8 @@ export async function loadMap(loadPromise: Thenable<any>) {
   }, {})
   tileLayers.forEach((l, idx) => {
     addLevel(layerData[idx], {
-      tileWidth: tilewidth,
-      tileHeight: tileheight,
+      tileWidth: map.tilewidth,
+      tileHeight: map.tileheight,
       tiles,
     })
   })
