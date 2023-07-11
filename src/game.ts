@@ -9,8 +9,8 @@ const map = await loadMap("assets/industrial.tmj")
 
 // find spawn
 const objLayer = map.layers.find((l) => l.type === "objectgroup") as ObjectLayer
-const spawnObj = objLayer.objects.find(o => o.name.startsWith("spawn"))
-if(!spawnObj) throw new Error("Spawn not found")
+const spawnObj = objLayer.objects.find((o) => o.name.startsWith("spawn"))
+if (!spawnObj) throw new Error("Spawn not found")
 const spawnPos = vec2(objLayer.x + spawnObj.x, objLayer.y + spawnObj.y)
 
 const hero = add([
@@ -37,8 +37,10 @@ hero.onUpdate(() => {
   // camera follow hero in x
   const currentCamPos = camPos()
   let camY = currentCamPos.y
-  if (hero.pos.y > camY + height() * 0.2) camY += dt() * 64
-  if (hero.pos.y < camY - height() * 0.2) camY -= dt() * 64
+  if (hero.pos.y > camY + height() * 0.2)
+    camY += dt() * 64 * (hero.pos.y - camY) * 0.1
+  if (hero.pos.y < camY - height() * 0.2)
+    camY -= dt() * 64 * (camY - hero.pos.y) * 0.1
   camPos(hero.pos.x, camY)
 })
 
