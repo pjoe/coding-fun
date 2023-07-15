@@ -19,7 +19,7 @@ const hero = add([
   anchor("center"),
   sprite("hero"),
   area(),
-  body(),
+  body({maxVelocity: 160}),
   "hero",
 ])
 hero.play("default")
