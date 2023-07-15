@@ -33,6 +33,7 @@ export interface TileSetRef {
 
 export interface TileLayer {
   type: "tilelayer"
+  name: string
   class?: string
   width: number
   height: number
@@ -53,9 +54,22 @@ export interface TileObject {
 
 export interface ObjectLayer {
   type: "objectgroup"
+  name: string
   x: number
   y: number
   objects: TileObject[]
+}
+
+export interface ImageLayer {
+  type: "imagelayer"
+  name: string
+  x: number
+  y: number
+  image: string
+  repeatx?: boolean
+  repeaty?: boolean
+  parallaxx?: number
+  parallaxy?: number
 }
 
 export interface TileMap {
@@ -68,7 +82,7 @@ export interface TileMap {
   orientation: "orthogonal"
   renderorder: "right-down"
   tilesets: TileSetRef[]
-  layers: (TileLayer | ObjectLayer)[]
+  layers: (TileLayer | ObjectLayer | ImageLayer)[]
 }
 
 function loadData(fname: string): Promise<any> {
@@ -91,6 +105,8 @@ export async function loadMap(fname: string) {
   const layerData: string[][] = []
   // sprite refs include flags (flip/rotate)
   const layerSpriteRefs: Set<number>[] = []
+
+  // figure out used tiles
   tileLayers.forEach((l) => {
     const spriteRefs = new Set<number>()
     layerSpriteRefs.push(spriteRefs)
@@ -171,47 +187,60 @@ export async function loadMap(fname: string) {
   console.debug("namedTiles", namedTiles)
 
   // tile levels
-  tileLayers.forEach((l, idx) => {
-    const tiles = Array.from(layerSpriteRefs[idx]).reduce<LevelOpt["tiles"]>(
-      (acc, s) => {
-        acc[String.fromCharCode(s)] = () => {
-          const spriteNum = s & 0xfff
-          let spriteName = String.fromCharCode(spriteNum)
-          const extra: any = []
-          if (namedTiles[spriteNum - 1]) {
-            spriteName = namedTiles[spriteNum - 1]
-            extra.push(spriteName, ...spriteName.split(","))
-            extra.push({ anim: "default" })
+  let tlIdx = 0
+  map.layers.forEach((layer) => {
+    if (layer.type === "tilelayer") {
+      const tl = layer as TileLayer
+      const tiles = Array.from(layerSpriteRefs[tlIdx]).reduce<LevelOpt["tiles"]>(
+        (acc, s) => {
+          acc[String.fromCharCode(s)] = () => {
+            const spriteNum = s & 0xfff
+            let spriteName = String.fromCharCode(spriteNum)
+            const extra: any = []
+            if (namedTiles[spriteNum - 1]) {
+              spriteName = namedTiles[spriteNum - 1]
+              extra.push(spriteName, ...spriteName.split(","))
+              extra.push({ anim: "default" })
+            }
+            if (["decoration"].includes(tl.class ?? "")) {
+              // no colliders
+            } else {
+              // add default collider
+              extra.push(area(), body({ isStatic: true }))
+            }
+            const comps: CompList<any> = [
+              sprite(spriteName),
+              anchor("center"),
+              ...extra,
+            ]
+            if (s & 0xc000) {
+              comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
+            }
+            return comps
           }
-          if (["decoration"].includes(l.class ?? "")) {
-            // no colliders
-          } else {
-            // add default collider
-            extra.push(area(), body({ isStatic: true }))
-          }
-          const comps: CompList<any> = [
-            sprite(spriteName),
-            anchor("center"),
-            ...extra,
-          ]
-          if (s & 0xc000) {
-            comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
-          }
-          return comps
-        }
-        return acc
-      },
-      {},
-    )
+          return acc
+        },
+        {},
+      )
 
-    const level = addLevel(layerData[idx], {
-      tileWidth: map.tilewidth,
-      tileHeight: map.tileheight,
-      tiles,
-    })
-    level.children.forEach((c) => {
-      if (c.anim) c.play(c.anim)
-    })
+      const level = addLevel(layerData[tlIdx], {
+        tileWidth: map.tilewidth,
+        tileHeight: map.tileheight,
+        tiles,
+      })
+      level.children.forEach((c) => {
+        if (c.anim) c.play(c.anim)
+      })
+      ++tlIdx
+    } else if(layer.type === "imagelayer") {
+      const il = layer as ImageLayer
+      loadSprite(il.name, `${basedir}/${il.image}`)
+      add([
+        "imagelayer",
+        il.name,
+        sprite(il.name)
+      ])
+    }
   })
   return map
 }
