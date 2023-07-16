@@ -235,11 +235,20 @@ export async function loadMap(fname: string) {
     } else if(layer.type === "imagelayer") {
       const il = layer as ImageLayer
       loadSprite(il.name, `${basedir}/${il.image}`)
-      add([
+      const imgLayer = add([
         "imagelayer",
         il.name,
+        pos(0, 0),
         sprite(il.name)
       ])
+      const parallaxx = il.parallaxx ?? 1
+      const parallaxy = il.parallaxy ?? 1
+      if(parallaxx !== 1 || parallaxy !== 1) {
+        imgLayer.onUpdate(() => {
+          imgLayer.pos.x = camPos().x * (1 - parallaxx)
+          imgLayer.pos.y = camPos().y * (1 - parallaxy)
+        })
+      }
     }
   })
   return map
