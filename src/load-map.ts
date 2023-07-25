@@ -23,6 +23,7 @@ export interface TileSet {
   imageheight: number
   tilewidth: number
   tileheight: number
+  tilecount: number
   tiles: Tile[]
 }
 
@@ -127,62 +128,69 @@ export async function loadMap(fname: string) {
     layerData.push(ldata)
   })
 
-  // use first tileset
-  const ts = tilesets[0]
+  // tilesets
   const namedTiles: Record<number, string> = {}
-  const imagetilewidth = ts.imagewidth / ts.tilewidth
-  const initialSpriteAtlasData = ts.tiles.reduce<SpriteAtlasData>((acc, t) => {
-    const x = (t.id % ts.columns) * ts.tilewidth
-    const y = Math.floor(t.id / ts.columns) * ts.tileheight
-    const name = t.type ?? `tile-${t.id}`
-    namedTiles[t.id] = name
-    const spriteEntry: SpriteAtlasEntry = {
-      x,
-      y,
-      width: ts.tilewidth,
-      height: ts.tileheight,
-      anims: {
-        default: { from: 0, to: 0 },
+  tilesets.forEach((ts, tsIdx) => {
+    const firstGid = map.tilesets[tsIdx].firstgid
+    const imagetilewidth = ts.imagewidth / ts.tilewidth
+    const initialSpriteAtlasData = ts.tiles?.reduce<SpriteAtlasData>(
+      (acc, t) => {
+        const x = (t.id % ts.columns) * ts.tilewidth
+        const y = Math.floor(t.id / ts.columns) * ts.tileheight
+        const name = t.type ?? `tile-${t.id + firstGid}`
+        namedTiles[t.id] = name
+        const spriteEntry: SpriteAtlasEntry = {
+          x,
+          y,
+          width: ts.tilewidth,
+          height: ts.tileheight,
+          anims: {
+            default: { from: 0, to: 0 },
+          },
+        }
+        if (t.animation && t.animation.length > 0) {
+          const frames = t.animation.map((a) =>
+            quad(
+              (a.tileid % ts.columns) * ts.tilewidth - x,
+              Math.floor(a.tileid / ts.columns) * ts.tileheight - y,
+              ts.tilewidth,
+              ts.tileheight,
+            ),
+          )
+          spriteEntry.frames = frames
+          spriteEntry.anims = {
+            default: {
+              from: 0,
+              to: frames.length - 1,
+              loop: true,
+              speed: 1000 / t.animation[0].duration,
+            },
+          }
+        }
+        console.debug("tile:", t.id, name, spriteEntry)
+
+        acc[name] = spriteEntry
+        return acc
       },
-    }
-    if (t.animation && t.animation.length > 0) {
-      const frames = t.animation.map((a) =>
-        quad(
-          (a.tileid % ts.columns) * ts.tilewidth - x,
-          Math.floor(a.tileid / ts.columns) * ts.tileheight - y,
-          ts.tilewidth,
-          ts.tileheight,
-        ),
-      )
-      spriteEntry.frames = frames
-      spriteEntry.anims = {
-        default: {
-          from: 0,
-          to: frames.length - 1,
-          loop: true,
-          speed: 1000 / t.animation[0].duration,
+      {},
+    )
+
+    const spriteInfo = Array.from(sprites)
+    .filter(s => s >= firstGid && s < firstGid + ts.tilecount)
+    .reduce<SpriteAtlasData>(
+      (acc, s) => ({
+        ...acc,
+        [String.fromCharCode(s)]: {
+          x: ((s - firstGid) % imagetilewidth) * ts.tilewidth,
+          y: Math.floor((s - firstGid) / imagetilewidth) * ts.tileheight,
+          width: ts.tilewidth,
+          height: ts.tileheight,
         },
-      }
-    }
-    console.debug("tile:", t.id, name, spriteEntry)
-
-    acc[name] = spriteEntry
-    return acc
-  }, {})
-
-  const spriteInfo = Array.from(sprites).reduce<SpriteAtlasData>(
-    (acc, s) => ({
-      ...acc,
-      [String.fromCharCode(s)]: {
-        x: ((s - 1) % imagetilewidth) * ts.tilewidth,
-        y: Math.floor((s - 1) / imagetilewidth) * ts.tileheight,
-        width: ts.tilewidth,
-        height: ts.tileheight,
-      },
-    }),
-    initialSpriteAtlasData,
-  )
-  loadSpriteAtlas(`${basedir}/${ts.image}`, spriteInfo)
+      }),
+      initialSpriteAtlasData,
+    )
+    loadSpriteAtlas(`${basedir}/${ts.image}`, spriteInfo)
+  })
 
   console.debug("namedTiles", namedTiles)
 
@@ -191,37 +199,36 @@ export async function loadMap(fname: string) {
   map.layers.forEach((layer) => {
     if (layer.type === "tilelayer") {
       const tl = layer as TileLayer
-      const tiles = Array.from(layerSpriteRefs[tlIdx]).reduce<LevelOpt["tiles"]>(
-        (acc, s) => {
-          acc[String.fromCharCode(s)] = () => {
-            const spriteNum = s & 0xfff
-            let spriteName = String.fromCharCode(spriteNum)
-            const extra: any = []
-            if (namedTiles[spriteNum - 1]) {
-              spriteName = namedTiles[spriteNum - 1]
-              extra.push(spriteName, ...spriteName.split(","))
-              extra.push({ anim: "default" })
-            }
-            if (["decoration"].includes(tl.class ?? "")) {
-              // no colliders
-            } else {
-              // add default collider
-              extra.push(area(), body({ isStatic: true }))
-            }
-            const comps: CompList<any> = [
-              sprite(spriteName),
-              anchor("center"),
-              ...extra,
-            ]
-            if (s & 0xc000) {
-              comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
-            }
-            return comps
+      const tiles = Array.from(layerSpriteRefs[tlIdx]).reduce<
+        LevelOpt["tiles"]
+      >((acc, s) => {
+        acc[String.fromCharCode(s)] = () => {
+          const spriteNum = s & 0xfff
+          let spriteName = String.fromCharCode(spriteNum)
+          const extra: any = []
+          if (namedTiles[spriteNum - 1]) {
+            spriteName = namedTiles[spriteNum - 1]
+            extra.push(spriteName, ...spriteName.split(","))
+            extra.push({ anim: "default" })
           }
-          return acc
-        },
-        {},
-      )
+          if (["decoration"].includes(tl.class ?? "")) {
+            // no colliders
+          } else {
+            // add default collider
+            extra.push(area(), body({ isStatic: true }))
+          }
+          const comps: CompList<any> = [
+            sprite(spriteName),
+            anchor("center"),
+            ...extra,
+          ]
+          if (s & 0xc000) {
+            comps.push(scale(s & 0x8000 ? -1 : 1, s & 0x4000 ? -1 : 1))
+          }
+          return comps
+        }
+        return acc
+      }, {})
 
       const level = addLevel(layerData[tlIdx], {
         tileWidth: map.tilewidth,
@@ -232,18 +239,13 @@ export async function loadMap(fname: string) {
         if (c.anim) c.play(c.anim)
       })
       ++tlIdx
-    } else if(layer.type === "imagelayer") {
+    } else if (layer.type === "imagelayer") {
       const il = layer as ImageLayer
       loadSprite(il.name, `${basedir}/${il.image}`)
-      const imgLayer = add([
-        "imagelayer",
-        il.name,
-        pos(0, 0),
-        sprite(il.name)
-      ])
+      const imgLayer = add(["imagelayer", il.name, pos(0, 0), sprite(il.name)])
       const parallaxx = il.parallaxx ?? 1
       const parallaxy = il.parallaxy ?? 1
-      if(parallaxx !== 1 || parallaxy !== 1) {
+      if (parallaxx !== 1 || parallaxy !== 1) {
         imgLayer.onUpdate(() => {
           imgLayer.pos.x = camPos().x * (1 - parallaxx)
           imgLayer.pos.y = camPos().y * (1 - parallaxy)
